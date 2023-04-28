@@ -1,0 +1,22 @@
+{
+  "name": "04-clean-ddd",
+  "version": "1.0.0",
+  "description": "## Domínio",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.16.0",
+    "typescript": "^5.0.4",
+    "vite-tsconfig-paths": "^4.2.0",
+    "vitest": "^0.30.1"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.7"
+  }
+}
