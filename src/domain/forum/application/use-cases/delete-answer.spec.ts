@@ -2,6 +2,8 @@ import { InMemoryAnswersRepository } from '@/test/repositories/in-memory-answers
 import { DeleteAnswerUseCase } from './delete-answer'
 import { makeAnswer } from '@/test/factories/make-answer'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
+import { NotAllowedError } from './errors/not-allowed-error'
+import { ResourceNotFoundError } from './errors/resource-not-found-error'
 
 let inMemoryAnswersRepository: InMemoryAnswersRepository
 let sut: DeleteAnswerUseCase
@@ -18,11 +20,12 @@ describe('Delete answer', () => {
     })
     await inMemoryAnswersRepository.create(answer)
 
-    await sut.execute({
+    const result = await sut.execute({
       authorId: 'some-author',
       answerId: answer.id.toString(),
     })
 
+    expect(result.isRight()).toBe(true)
     expect(inMemoryAnswersRepository.items.length).toBe(0)
   })
 
@@ -32,20 +35,22 @@ describe('Delete answer', () => {
     })
     await inMemoryAnswersRepository.create(answer)
 
-    await expect(
-      sut.execute({
-        authorId: 'another-author',
-        answerId: answer.id.toString(),
-      }),
-    ).rejects.toEqual(new Error('Not allowed'))
+    const result = await sut.execute({
+      authorId: 'another-author',
+      answerId: answer.id.toString(),
+    })
+
+    expect(result.isLeft()).toBe(true)
+    expect(result.value).toBeInstanceOf(NotAllowedError)
   })
 
   it('should throw if the answer does not exist', async () => {
-    await expect(
-      sut.execute({
-        authorId: 'another-author',
-        answerId: 'non-existing-answer',
-      }),
-    ).rejects.toEqual(new Error('Answer not found'))
+    const result = await sut.execute({
+      authorId: 'another-author',
+      answerId: 'non-existing-answer',
+    })
+
+    expect(result.isLeft()).toBe(true)
+    expect(result.value).toBeInstanceOf(ResourceNotFoundError)
   })
 })

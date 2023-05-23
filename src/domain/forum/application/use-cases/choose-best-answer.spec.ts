@@ -3,6 +3,8 @@ import { ChooseBestAnswerUseCase } from './choose-best-answer'
 import { makeAnswer } from '@/test/factories/make-answer'
 import { InMemoryQuestionsRepository } from '@/test/repositories/in-memory-questions-repository'
 import { makeQuestion } from '@/test/factories/make-question'
+import { ResourceNotFoundError } from './errors/resource-not-found-error'
+import { NotAllowedError } from './errors/not-allowed-error'
 
 let inMemoryAnswersRepository: InMemoryAnswersRepository
 let inMemoryQuestionsRepository: InMemoryQuestionsRepository
@@ -26,21 +28,23 @@ describe('Delete answer', () => {
     await inMemoryQuestionsRepository.create(question)
     await inMemoryAnswersRepository.create(answer)
 
-    await sut.execute({
+    const result = await sut.execute({
       authorId: question.authorId.toString(),
       answerId: answer.id.toString(),
     })
 
+    expect(result.isRight()).toBe(true)
     expect(inMemoryQuestionsRepository.items[0].bestAnswerId).toEqual(answer.id)
   })
 
   it('should throw if the answer does not exist', async () => {
-    await expect(
-      sut.execute({
-        authorId: 'non-existing-author',
-        answerId: 'non-existing-answer',
-      }),
-    ).rejects.toEqual(new Error('Answer not found'))
+    const result = await sut.execute({
+      authorId: 'non-existing-author',
+      answerId: 'non-existing-answer',
+    })
+
+    expect(result.isLeft()).toBe(true)
+    expect(result.value).toBeInstanceOf(ResourceNotFoundError)
   })
 
   it('should throw if the question does not exist', async () => {
@@ -48,12 +52,13 @@ describe('Delete answer', () => {
 
     await inMemoryAnswersRepository.create(answer)
 
-    await expect(
-      sut.execute({
-        authorId: 'non-existing-author',
-        answerId: answer.id.toString(),
-      }),
-    ).rejects.toEqual(new Error('Question not found'))
+    const result = await sut.execute({
+      authorId: 'non-existing-author',
+      answerId: answer.id.toString(),
+    })
+
+    expect(result.isLeft()).toBe(true)
+    expect(result.value).toBeInstanceOf(ResourceNotFoundError)
   })
 
   it('should throw if the question belongs to another user', async () => {
@@ -64,11 +69,12 @@ describe('Delete answer', () => {
     await inMemoryQuestionsRepository.create(question)
     await inMemoryAnswersRepository.create(answer)
 
-    await expect(
-      sut.execute({
-        authorId: 'another-author',
-        answerId: answer.id.toString(),
-      }),
-    ).rejects.toEqual(new Error('Not allowed'))
+    const result = await sut.execute({
+      authorId: 'another-author',
+      answerId: answer.id.toString(),
+    })
+
+    expect(result.isLeft()).toBe(true)
+    expect(result.value).toBeInstanceOf(NotAllowedError)
   })
 })
