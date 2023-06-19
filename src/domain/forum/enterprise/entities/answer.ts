@@ -1,11 +1,13 @@
 import { Entity } from '@/core/entities/entity'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
 import { Optional } from '@/core/types/optional'
+import { AnswerAttachmentWatchedList } from './answer-attachment-watched-list'
 
 export interface AnswerProps {
   authorId: UniqueEntityID
   questionId: UniqueEntityID
   content: string
+  attachments: AnswerAttachmentWatchedList
   createdAt: Date
   updatedAt?: Date
 }
@@ -21,6 +23,10 @@ export class Answer extends Entity<AnswerProps> {
 
   get content() {
     return this.props.content
+  }
+
+  get attachments() {
+    return this.props.attachments
   }
 
   get createdAt() {
@@ -44,11 +50,22 @@ export class Answer extends Entity<AnswerProps> {
     this.touch()
   }
 
+  set attachments(attachments: AnswerAttachmentWatchedList) {
+    this.props.attachments = attachments
+  }
+
   static create(
-    props: Optional<AnswerProps, 'createdAt'>,
+    props: Optional<AnswerProps, 'createdAt' | 'attachments'>,
     id?: UniqueEntityID,
   ) {
-    const answer = new Answer({ ...props, createdAt: new Date() }, id)
+    const answer = new Answer(
+      {
+        ...props,
+        attachments: props.attachments ?? new AnswerAttachmentWatchedList(),
+        createdAt: new Date(),
+      },
+      id,
+    )
 
     return answer
   }
